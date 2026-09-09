@@ -1,0 +1,66 @@
+GAS LISTING hello.s 			page 1
+
+
+   1              	.global _start
+   2              	
+   3              	# Deze macro genereert exact 0 runtime-instructies.
+   4              	# Hij maakt een lokaal symbool aan dat het verschil tussen twee labels bevat.
+   5              	.macro define_string name, text
+   6              	\name:
+   7              	    .ascii "\text"
+   8              	\name\()_end:
+   9              	.set \name\()_len, (\name\()_end - \name)
+  10              	.endm
+  11              	
+  12              	.section .rodata
+  13              	# De macro definieert de string en berekent de lengte compile-time.
+  14              	# Er worden GEEN .global statements aangemaakt. Alles blijft privé.
+  15 0000 48656C6C 	define_string msg, "Hello, World!\n"
+  15      6F2C2057 
+  15      6F726C64 
+  15      210A
+  16              	
+  17              	.section .text
+  18              	_start:
+  19              	    # sys_write(stdout, msg, msg_len)
+  20 0000 93080004 	    li a7, 64               # syscall 64 = sys_write
+  21 0004 0545     	    li a0, 1                # file descriptor 1 = stdout
+  22 0006 97050000 	    la a1, msg              # laad het adres van de string (PIE-veilig)
+  22      83B50500 
+  23              	
+  24              	    # Omdat msg_len een pure, lokale constante is, dwingen we hier
+  25              	    # de absolute waarde af. Dit compileert naar exact één 'addi' instructie.
+  26              	    # 0 bytes runtime-overhead, de assembler/linker lost dit op!
+  27 000e 3946     	    li a2, msg_len          
+  28 0010 73000000 	    ecall
+  29              	
+  30              	    # sys_exit(0)
+  31 0014 9308D005 	    li a7, 93               # syscall 93 = sys_exit
+  32 0018 0145     	    li a0, 0                # exit code 0
+  33 001a 73000000 	    ecall
+GAS LISTING hello.s 			page 2
+
+
+DEFINED SYMBOLS
+             hello.s:18     .text:0000000000000000 _start
+             hello.s:15     .rodata:0000000000000000 msg
+             hello.s:15     .rodata:000000000000000e msg_end
+             hello.s:15     *ABS*:000000000000000e msg_len
+             hello.s:20     .text:0000000000000000 $xrv64i2p0_m2p0_a2p0_f2p0_d2p0_c2p0_zmmul1p0_zaamo1p0_zalrsc1p0
+             hello.s:20     .text:0000000000000000 .L0 
+             hello.s:21     .text:0000000000000004 .L0 
+             hello.s:22     .text:0000000000000006 .L0 
+             hello.s:27     .text:000000000000000e .L0 
+             hello.s:28     .text:0000000000000010 .L0 
+             hello.s:31     .text:0000000000000014 .L0 
+             hello.s:32     .text:0000000000000018 .L0 
+             hello.s:33     .text:000000000000001a .L0 
+             hello.s:33     .text:000000000000001e .L0 
+                            .text:0000000000000000 .L0 
+             hello.s:33     .text:000000000000001e .L0 
+                       .debug_str:0000000000000000 .L0 
+                       .debug_str:0000000000000008 .L0 
+                       .debug_str:000000000000003f .L0 
+             hello.s:22     .text:0000000000000006 .L0 
+
+NO UNDEFINED SYMBOLS
